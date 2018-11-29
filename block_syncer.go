@@ -77,7 +77,8 @@ func (syncer *BlockSyncer) reqHandler() {
 	for {
 		currentBlock := syncer.blockChain.GetCurrentBlock()
 		syncer.p2p.Gather(func(peerState uint64) bool {
-			return peerState > currentBlock.Header.Height
+			//TODO choose all peer as the candidate, so we can gather block more efficiently
+			return true
 		}, &message.BlockHeaderReq{
 			Len:      1,
 			HashStop: currentBlock.HeaderHash,

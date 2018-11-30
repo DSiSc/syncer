@@ -56,7 +56,7 @@ func (syncer *BlockSyncer) Start() error {
 
 	syncer.subscribers[types.EventBlockCommitFailed] = syncer.eventCenter.Subscribe(types.EventBlockCommitFailed, GatherNewBlockFunc)
 	syncer.subscribers[types.EventBlockVerifyFailed] = syncer.eventCenter.Subscribe(types.EventBlockVerifyFailed, GatherNewBlockFunc)
-	syncer.subscribers[types.EventBlockCommitFailed] = syncer.eventCenter.Subscribe(types.EventBlockCommitted, GatherNewBlockFunc)
+	syncer.subscribers[types.EventBlockCommitted] = syncer.eventCenter.Subscribe(types.EventBlockCommitted, GatherNewBlockFunc)
 	return nil
 }
 
@@ -76,12 +76,13 @@ func (syncer *BlockSyncer) reqHandler() {
 	timer := time.NewTicker(10 * time.Second)
 	for {
 		currentBlock := syncer.blockChain.GetCurrentBlock()
+		hashStop := common.HeaderHash(currentBlock.Header)
 		syncer.p2p.Gather(func(peerState uint64) bool {
 			//TODO choose all peer as the candidate, so we can gather block more efficiently
 			return true
 		}, &message.BlockHeaderReq{
 			Len:      1,
-			HashStop: currentBlock.HeaderHash,
+			HashStop: hashStop,
 		})
 		select {
 		case <-blockSyncChan:
@@ -138,19 +139,19 @@ func (syncer *BlockSyncer) recvHandler() {
 				if brmsg.Len <= 0 {
 					brmsg.Len = message.MAX_BLOCK_HEADER_NUM
 				}
+				blockHeaders := make([]*types.Header, 0)
 				blockStop, err := syncer.blockChain.GetBlockByHash(brmsg.HashStop)
 				if err != nil {
-					log.Error("have no block with hash %x in local database", brmsg.HashStart)
-					return
-				}
-				blockHeaders := make([]*types.Header, 0)
-				for i := 1; i <= int(brmsg.Len); i++ {
-					block, err := syncer.blockChain.GetBlockByHeight(blockStop.Header.Height + uint64(i))
-					if err != nil {
-						log.Error("failed to get block with height %d, as:%v", blockStop.Header.Height+uint64(i), err)
-						break
+					log.Warn("have no block with Hash %x in local database", brmsg.HashStop)
+				} else {
+					for i := 1; i <= int(brmsg.Len); i++ {
+						block, err := syncer.blockChain.GetBlockByHeight(blockStop.Header.Height + uint64(i))
+						if err != nil {
+							log.Error("failed to get block with height %d, as:%v", blockStop.Header.Height+uint64(i), err)
+							break
+						}
+						blockHeaders = append(blockHeaders, block.Header)
 					}
-					blockHeaders = append(blockHeaders, block.Header)
 				}
 				bMsg := &message.BlockHeaders{
 					Headers: blockHeaders,

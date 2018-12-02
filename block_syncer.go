@@ -73,10 +73,11 @@ func (syncer *BlockSyncer) Stop() {
 
 // send block sync request to gather the newest block from p2p
 func (syncer *BlockSyncer) reqHandler() {
-	timer := time.NewTicker(10 * time.Second)
+	timer := time.NewTicker(60 * time.Second)
 	for {
 		currentBlock := syncer.blockChain.GetCurrentBlock()
 		hashStop := common.HeaderHash(currentBlock.Header)
+		log.Debug("current block is %x, gather next block from p2p", hashStop)
 		syncer.p2p.Gather(func(peerState uint64) bool {
 			//TODO choose all peer as the candidate, so we can gather block more efficiently
 			return true

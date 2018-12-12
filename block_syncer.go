@@ -148,7 +148,7 @@ func (syncer *BlockSyncer) recvHandler() {
 					for i := 1; i <= int(brmsg.Len); i++ {
 						block, err := syncer.blockChain.GetBlockByHeight(blockStop.Header.Height + uint64(i))
 						if err != nil {
-							log.Error("failed to get block with height %d, as:%v", blockStop.Header.Height+uint64(i), err)
+							log.Warn("failed to get block with height %d, as:%v", blockStop.Header.Height+uint64(i), err)
 							break
 						}
 						blockHeaders = append(blockHeaders, block.Header)

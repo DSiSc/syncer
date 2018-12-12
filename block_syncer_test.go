@@ -53,7 +53,7 @@ func mockBlockMsg() *p2p.InternalMsg {
 
 func TestNewBlockSyncer(t *testing.T) {
 	assert := assert.New(t)
-	p, _ := p2p.NewP2P(mockP2PConfig())
+	p, _ := p2p.NewP2P(mockP2PConfig(), &eventCenter{})
 	sendChan := make(chan interface{})
 	bs, err := NewBlockSyncer(p, sendChan, &eventCenter{})
 	assert.Nil(err)
@@ -65,7 +65,7 @@ func TestBlockSyncer_Start(t *testing.T) {
 	assert := assert.New(t)
 
 	pMsgChan := make(chan *p2p.InternalMsg)
-	p, _ := p2p.NewP2P(mockP2PConfig())
+	p, _ := p2p.NewP2P(mockP2PConfig(), &eventCenter{})
 	monkey.PatchInstanceMethod(reflect.TypeOf(p), "Gather", func(this *p2p.P2P, filter p2p.PeerFilter, msg message.Message) error {
 		pMsgChan <- mockBlockMsg()
 		return nil
@@ -101,7 +101,7 @@ func TestBlockSyncer_Start(t *testing.T) {
 func TestBlockSyncer_Stop(t *testing.T) {
 	defer monkey.UnpatchAll()
 	assert := assert.New(t)
-	p, _ := p2p.NewP2P(mockP2PConfig())
+	p, _ := p2p.NewP2P(mockP2PConfig(), &eventCenter{})
 	monkey.PatchInstanceMethod(reflect.TypeOf(p), "Gather", func(this *p2p.P2P, filter p2p.PeerFilter, msg message.Message) error {
 		return nil
 	})

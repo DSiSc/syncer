@@ -11,16 +11,9 @@ import (
 	"time"
 )
 
-// module internal sync channel.
-var blockSyncChan = make(chan interface{})
-
-// GatherNewBlockFunc gather new block from p2p network.
-func GatherNewBlockFunc(block interface{}) {
-	blockSyncChan <- block
-}
-
 // BlockSyncer block synchronize program
 type BlockSyncer struct {
+	blockSyncChan chan interface{}
 	p2p           p2p.P2PAPI
 	blockChain    *blockchain.BlockChain
 	eventCenter   types.EventCenter
@@ -39,13 +32,14 @@ func NewBlockSyncer(p2p p2p.P2PAPI, sendChan chan<- interface{}, eventCenter typ
 		return nil, err
 	}
 	return &BlockSyncer{
-		p2p:         p2p,
-		blockChain:  blockChain,
-		sendChan:    sendChan,
-		stallChan:   make(chan types.Hash),
-		eventCenter: eventCenter,
-		subscribers: make(map[types.EventType]types.Subscriber),
-		quitChan:    make(chan interface{}),
+		blockSyncChan: make(chan interface{}),
+		p2p:           p2p,
+		blockChain:    blockChain,
+		sendChan:      sendChan,
+		stallChan:     make(chan types.Hash),
+		eventCenter:   eventCenter,
+		subscribers:   make(map[types.EventType]types.Subscriber),
+		quitChan:      make(chan interface{}),
 	}, nil
 }
 
@@ -54,9 +48,10 @@ func (syncer *BlockSyncer) Start() error {
 	go syncer.reqHandler()
 	go syncer.recvHandler()
 
-	syncer.subscribers[types.EventBlockCommitFailed] = syncer.eventCenter.Subscribe(types.EventBlockCommitFailed, GatherNewBlockFunc)
-	syncer.subscribers[types.EventBlockVerifyFailed] = syncer.eventCenter.Subscribe(types.EventBlockVerifyFailed, GatherNewBlockFunc)
-	syncer.subscribers[types.EventBlockCommitted] = syncer.eventCenter.Subscribe(types.EventBlockCommitted, GatherNewBlockFunc)
+	syncer.subscribers[types.EventBlockCommitFailed] = syncer.eventCenter.Subscribe(types.EventBlockCommitFailed, syncer.GatherNewBlockFunc)
+	syncer.subscribers[types.EventBlockVerifyFailed] = syncer.eventCenter.Subscribe(types.EventBlockVerifyFailed, syncer.GatherNewBlockFunc)
+	syncer.subscribers[types.EventBlockCommitted] = syncer.eventCenter.Subscribe(types.EventBlockCommitted, syncer.GatherNewBlockFunc)
+	syncer.subscribers[types.EventAddPeer] = syncer.eventCenter.Subscribe(types.EventAddPeer, syncer.GatherNewBlockFunc)
 	return nil
 }
 
@@ -69,6 +64,11 @@ func (syncer *BlockSyncer) Stop() {
 		delete(syncer.subscribers, eventType)
 		syncer.eventCenter.UnSubscribe(eventType, subscriber)
 	}
+}
+
+// GatherNewBlockFunc gather new block from p2p network.
+func (syncer *BlockSyncer) GatherNewBlockFunc(msg interface{}) {
+	syncer.blockSyncChan <- msg
 }
 
 // send block sync request to gather the newest block from p2p
@@ -86,7 +86,7 @@ func (syncer *BlockSyncer) reqHandler() {
 			HashStop: hashStop,
 		})
 		select {
-		case <-blockSyncChan:
+		case <-syncer.blockSyncChan:
 			continue
 		case <-timer.C:
 			continue

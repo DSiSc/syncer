@@ -35,7 +35,9 @@ func TestMain(m *testing.M) {
 }
 
 func mockP2PConfig() *pcfg.P2PConfig {
-	return &pcfg.P2PConfig{}
+	return &pcfg.P2PConfig{
+		ListenAddress: "127.0.0.1:8080",
+	}
 }
 
 func mockBlockMsg() *p2p.InternalMsg {

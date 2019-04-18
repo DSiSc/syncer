@@ -77,7 +77,7 @@ func (syncer *BlockSyncer) reqHandler() {
 	for {
 		currentBlock := syncer.blockChain.GetCurrentBlock()
 		if currentBlock != nil {
-			hashStop := common.HeaderHash(currentBlock.Header)
+			hashStop := currentBlock.HeaderHash
 			log.Debug("current block is %x, gather next block from p2p", hashStop)
 			syncer.p2p.Gather(func(peerState uint64) bool {
 				//TODO choose all peer as the candidate, so we can gather block more efficiently

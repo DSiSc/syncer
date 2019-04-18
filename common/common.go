@@ -1,30 +1,44 @@
 package common
 
 import (
-	"encoding/json"
-	"github.com/DSiSc/craft/config"
+	gconf "github.com/DSiSc/craft/config"
 	"github.com/DSiSc/craft/types"
 	"github.com/DSiSc/crypto-suite/crypto/sha3"
+	"hash"
+	"github.com/DSiSc/craft/rlp"
 )
 
-// HeaderHash calculate block's hash
-func HeaderHash(header *types.Header) (hash types.Hash) {
-	jsonByte, _ := json.Marshal(header)
-	sumByte := Sum(jsonByte)
-	copy(hash[:], sumByte)
-	return
-}
-
-// Sum returns the first 32 bytes of hash of the bz.
-func Sum(bz []byte) []byte {
+// get hash algorithm by global config
+func HashAlg() hash.Hash {
 	var alg string
-	if value, ok := config.GlobalConfig.Load(config.HashAlgName); ok {
+	if value, ok := gconf.GlobalConfig.Load(gconf.HashAlgName); ok {
 		alg = value.(string)
 	} else {
 		alg = "SHA256"
 	}
-	hasher := sha3.NewHashByAlgName(alg)
-	hasher.Write(bz)
-	hash := hasher.Sum(nil)
-	return hash[:types.HashLength]
+	return sha3.NewHashByAlgName(alg)
 }
+
+// calculate the hash value of the rlp encoded byte of x
+func rlpHash(x interface{}) (h types.Hash) {
+	hw := HashAlg()
+	rlp.Encode(hw, x)
+	hw.Sum(h[:0])
+	return h
+}
+
+// TxHash calculate tx's hash
+func TxHash(tx *types.Transaction) (hash types.Hash) {
+	if hash := tx.Hash.Load(); hash != nil {
+		return hash.(types.Hash)
+	}
+	v := rlpHash(tx)
+	tx.Hash.Store(v)
+	return v
+}
+
+// HeaderHash calculate block's hash
+func HeaderHash(header *types.Header) (hash types.Hash) {
+	return rlpHash(header)
+}
+

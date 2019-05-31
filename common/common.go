@@ -2,10 +2,10 @@ package common
 
 import (
 	gconf "github.com/DSiSc/craft/config"
+	"github.com/DSiSc/craft/rlp"
 	"github.com/DSiSc/craft/types"
 	"github.com/DSiSc/crypto-suite/crypto/sha3"
 	"hash"
-	"github.com/DSiSc/craft/rlp"
 )
 
 // get hash algorithm by global config
@@ -41,4 +41,3 @@ func TxHash(tx *types.Transaction) (hash types.Hash) {
 func HeaderHash(header *types.Header) (hash types.Hash) {
 	return rlpHash(header)
 }
-

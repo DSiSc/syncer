@@ -2,13 +2,13 @@ package syncer
 
 import (
 	"errors"
-	"github.com/DSiSc/blockchain"
-	bcfg "github.com/DSiSc/blockchain/config"
 	"github.com/DSiSc/craft/types"
 	"github.com/DSiSc/monkey"
 	"github.com/DSiSc/p2p"
 	pcfg "github.com/DSiSc/p2p/config"
 	"github.com/DSiSc/p2p/message"
+	"github.com/DSiSc/repository"
+	bcfg "github.com/DSiSc/repository/config"
 	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
@@ -16,19 +16,19 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	cg := bcfg.BlockChainConfig{
-		PluginName: blockchain.PLUGIN_MEMDB,
+	cg := bcfg.RepositoryConfig{
+		PluginName: repository.PLUGIN_MEMDB,
 	}
-	blockchain.InitBlockChain(cg, &eventCenter{})
-	bc, _ := blockchain.NewLatestStateBlockChain()
-	monkey.PatchInstanceMethod(reflect.TypeOf(bc), "GetCurrentBlock", func(this *blockchain.BlockChain) *types.Block {
+	repository.InitRepository(cg, &eventCenter{})
+	bc, _ := repository.NewLatestStateRepository()
+	monkey.PatchInstanceMethod(reflect.TypeOf(bc), "GetCurrentBlock", func(this *repository.Repository) *types.Block {
 		return &types.Block{
 			Header: &types.Header{
 				Height: 2,
 			},
 		}
 	})
-	monkey.Patch(blockchain.NewLatestStateBlockChain, func() (*blockchain.BlockChain, error) {
+	monkey.Patch(repository.NewLatestStateRepository, func() (*repository.Repository, error) {
 		return bc, nil
 	})
 	m.Run()

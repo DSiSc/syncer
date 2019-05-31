@@ -1,11 +1,11 @@
 package syncer
 
 import (
-	"github.com/DSiSc/blockchain"
 	"github.com/DSiSc/craft/log"
 	"github.com/DSiSc/craft/types"
 	"github.com/DSiSc/p2p"
 	"github.com/DSiSc/p2p/message"
+	"github.com/DSiSc/repository"
 	"github.com/DSiSc/syncer/common"
 	"sync"
 	"time"
@@ -15,7 +15,7 @@ import (
 type BlockSyncer struct {
 	blockSyncChan chan interface{}
 	p2p           p2p.P2PAPI
-	blockChain    *blockchain.BlockChain
+	blockChain    *repository.Repository
 	eventCenter   types.EventCenter
 	sendChan      chan<- interface{}
 	stallChan     chan types.Hash
@@ -27,7 +27,7 @@ type BlockSyncer struct {
 
 // NewBlockSyncer create block syncer instance.
 func NewBlockSyncer(p2p p2p.P2PAPI, sendChan chan<- interface{}, eventCenter types.EventCenter) (*BlockSyncer, error) {
-	blockChain, err := blockchain.NewLatestStateBlockChain()
+	blockChain, err := repository.NewLatestStateRepository()
 	if err != nil {
 		return nil, err
 	}

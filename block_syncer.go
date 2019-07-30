@@ -49,7 +49,6 @@ func (syncer *BlockSyncer) Start() error {
 	go syncer.recvHandler()
 
 	syncer.subscribers[types.EventBlockCommitFailed] = syncer.eventCenter.Subscribe(types.EventBlockCommitFailed, syncer.GatherNewBlockFunc)
-	syncer.subscribers[types.EventBlockVerifyFailed] = syncer.eventCenter.Subscribe(types.EventBlockVerifyFailed, syncer.GatherNewBlockFunc)
 	syncer.subscribers[types.EventBlockCommitted] = syncer.eventCenter.Subscribe(types.EventBlockCommitted, syncer.GatherNewBlockFunc)
 	syncer.subscribers[types.EventAddPeer] = syncer.eventCenter.Subscribe(types.EventAddPeer, syncer.GatherNewBlockFunc)
 	return nil

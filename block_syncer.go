@@ -67,7 +67,11 @@ func (syncer *BlockSyncer) Stop() {
 
 // GatherNewBlockFunc gather new block from p2p network.
 func (syncer *BlockSyncer) GatherNewBlockFunc(msg interface{}) {
-	syncer.blockSyncChan <- msg
+	select {
+	case syncer.blockSyncChan <- msg:
+	default:
+		log.Info("previous sync process have not finished, will ignore next sync request")
+	}
 }
 
 // send block sync request to gather the newest block from p2p
